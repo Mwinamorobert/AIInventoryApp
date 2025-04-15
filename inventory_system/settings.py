@@ -19,7 +19,11 @@ from decouple import config
 import dj_database_url
 
 DATABASES = {
-    'default': dj_database_url.config(default=config('DATABASE_URL'))
+    'default': dj_database_url.config(
+        default=config('DATABASE_URL'),
+        conn_max_age=600,
+        conn_health_checks=True
+    )
 }
 
 
@@ -133,3 +137,31 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'        
 LOGOUT_REDIRECT_URL = '/login/' 
 LOGOUT_REDIRECT_URL_ALLOWED_METHODS = ['GET', 'POST']
+
+if not DEBUG:  # Only enable these in production
+    # HSTS Settings
+    SECURE_HSTS_SECONDS = 30 * 24 * 60 * 60  
+    SECURE_HSTS_PRELOAD = True
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+WHITENOISE_MAX_AGE = 31536000 if not DEBUG else 0
+WHITENOISE_USE_FINDERS = DEBUG
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'WARNING',
+    },
+}
