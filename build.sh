@@ -1,5 +1,4 @@
-# Run migrations
-python manage.py migrate
+#!/usr/bin/env bash
 
-# Collect static files (optional)
+python manage.py migrate
 python manage.py collectstatic --noinput
