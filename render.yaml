@@ -1,8 +1,15 @@
 services:
   - type: web
+    runtime: python
     name: aiinventoryapp
     env: python
-    runtime: python3
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn inventory_system.wsgi:application
-    postDeployCommand: python manage.py migrate --noinput
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn aiinventory.wsgi:application"
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: your-render-db-name
+          property: connectionString
+    postDeployScript: |
+      python manage.py migrate
