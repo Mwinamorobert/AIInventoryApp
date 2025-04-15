@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: your-app-name
+    name: aiinventoryapp
     env: python
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn inventory_system.wsgi:application
