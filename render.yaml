@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: your-app-name
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn inventory_system.wsgi:application
+    postDeployCommand: python manage.py migrate --noinput
