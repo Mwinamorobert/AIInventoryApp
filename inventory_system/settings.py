@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-REPLACE_WITH_YOUR_OWN_SECRET_KEY'
 DEBUG = True
 
-ALLOWED_HOSTS = ['web-production-a35df.up.railway.app', '127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['aiinventoryapp.onrender.com', 'localhost', '127.0.0.1']
 
 # Application definition
 
@@ -139,6 +139,3 @@ LOGGING = {
     },
 }
 
-CSRF_TRUSTED_ORIGINS = [
-    "https://web-production-a35df.up.railway.app"
-]
