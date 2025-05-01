@@ -138,3 +138,7 @@ LOGGING = {
         'level': 'WARNING',
     },
 }
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://web-production-a35df.up.railway.app"
+]
