@@ -1,0 +1,213 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Insights - AI Inventory System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="{% static 'css/style.css' %}" rel="stylesheet">
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script id="forecast-chart-data" type="application/json">{{ forecast_chart_data|safe }}</script>
+  <script id="anomalies-chart-data" type="application/json">{{ anomalies_chart_data|safe }}</script>
+  <script id="stock-trend-data" type="application/json">{{ stock_trend_data|safe }}</script>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+    <div class="container">
+      <a class="navbar-brand" href="{% url 'dashboard' %}">📦 AI Inventory</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}">🏠 Dashboard</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'locations' %}">📍 Locations</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'suppliers' %}">🤝 Suppliers</a></li>
+          <li class="nav-item"><a class="nav-link active" href="{% url 'insights' %}">🧠 Insights</a></li>
+        </ul>
+        <ul class="navbar-nav">
+          <li class="nav-item"><button id="theme-toggle" class="nav-link btn">🌙 Toggle Theme</button></li>
+          <li class="nav-item">
+            <form method="POST" action="{% url 'logout' %}" style="display:inline;">
+              {% csrf_token %}
+              <button type="submit" class="nav-link btn btn-link" style="padding: 0;">🚪 Logout</button>
+            </form>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container my-4">
+    <h2 class="text-center mb-4">AI Insights 🧠</h2>
+    <div class="row g-4">
+      <div class="col-12 col-md-6">
+        <div class="card shadow-sm fade-in">
+          <div class="card-body">
+            <h4 class="card-title">🔮 Demand Forecast</h4>
+            <div id="forecast-chart" class="chart-container">
+              <div class="spinner-container"><div class="spinner-border text-primary" role="status"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-md-6">
+        <div class="card shadow-sm fade-in">
+          <div class="card-body">
+            <h4 class="card-title">🚨 Anomalies Detected</h4>
+            <div id="anomalies-chart" class="chart-container">
+              <div class="spinner-container"><div class="spinner-border text-primary" role="status"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-12">
+        <div class="card shadow-sm fade-in">
+          <div class="card-body">
+            <h4 class="card-title">📊 Stock Trends</h4>
+            <div id="stock-trend-chart" class="chart-container">
+              <div class="spinner-container"><div class="spinner-border text-primary" role="status"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const insightsRow = document.querySelector('.row.g-4');
+
+      // 🌙 Theme toggle
+      const toggleButton = document.getElementById('theme-toggle');
+      const body = document.body;
+      if (localStorage.getItem('theme') === 'dark') {
+        body.classList.add('dark-theme');
+        toggleButton.textContent = '☀️ Toggle Theme';
+      }
+      toggleButton.addEventListener('click', () => {
+        body.classList.toggle('dark-theme');
+        localStorage.setItem('theme', body.classList.contains('dark-theme') ? 'dark' : 'light');
+        toggleButton.textContent = body.classList.contains('dark-theme') ? '☀️ Toggle Theme' : '🌙 Toggle Theme';
+      });
+
+      // 📊 Fetch and render charts
+      fetch('/api/get_dashboard_data/')
+        .then(res => res.json())
+        .then(data => {
+          if (data.forecast_chart_data) {
+            Plotly.newPlot('forecast-chart',
+              JSON.parse(data.forecast_chart_data).data,
+              JSON.parse(data.forecast_chart_data).layout
+            );
+          } else {
+            document.getElementById('forecast-chart').innerHTML =
+              '<p class="text-muted text-center">No forecast data available. Add multiple entries over time.</p>';
+          }
+
+          if (data.anomalies_chart_data) {
+            Plotly.newPlot('anomalies-chart',
+              JSON.parse(data.anomalies_chart_data).data,
+              JSON.parse(data.anomalies_chart_data).layout
+            );
+          } else {
+            document.getElementById('anomalies-chart').innerHTML =
+              '<p class="text-muted text-center">No anomalies detected. System looks stable! ✅</p>';
+          }
+
+          if (data.stock_chart_data) {
+            Plotly.newPlot('stock-trend-chart',
+              JSON.parse(data.stock_chart_data).data,
+              JSON.parse(data.stock_chart_data).layout
+            );
+          }
+
+          const items = data.items || [];
+
+          // 🚀 Top Items
+          const topItems = [...items].sort((a, b) => b.quantity - a.quantity).slice(0, 5);
+          if (topItems.length) {
+            const topDiv = document.createElement('div');
+            topDiv.className = 'col-12';
+            topDiv.innerHTML = `<div class="card shadow-sm fade-in"><div class="card-body"><h4 class="card-title">🚀 Top 5 Fastest-Moving Items</h4><ul>
+              ${topItems.map(item => `<li>${item.name}: ${item.quantity} units</li>`).join('')}
+            </ul></div></div>`;
+            insightsRow.appendChild(topDiv);
+          }
+
+          // 🪦 Deadstock
+          const deadstock = items.filter(item => item.quantity === 0);
+          if (deadstock.length) {
+            const deadDiv = document.createElement('div');
+            deadDiv.className = 'col-12';
+            deadDiv.innerHTML = `<div class="card shadow-sm fade-in"><div class="card-body"><h4 class="card-title">🪦 Deadstock Items</h4><ul>
+              ${deadstock.map(item => `<li>${item.name}: ${item.quantity} units (inactive)</li>`).join('')}
+            </ul></div></div>`;
+            insightsRow.appendChild(deadDiv);
+          }
+
+          // ⚠️ Low Stock
+          const lowStock = items.filter(item => item.quantity < 10);
+          if (lowStock.length) {
+            const lowDiv = document.createElement('div');
+            lowDiv.className = 'col-12';
+            lowDiv.innerHTML = `<div class="card shadow-sm fade-in"><div class="card-body"><h4 class="card-title">⚠️ Low Stock Warnings</h4><ul>
+              ${lowStock.map(item => `<li>${item.name}: ${item.quantity} units (${item.location})</li>`).join('')}
+            </ul></div></div>`;
+            insightsRow.appendChild(lowDiv);
+          }
+
+          // 📦 Restock Suggestions
+          const restock = lowStock.map(item => ({
+            name: item.name,
+            suggested_quantity: Math.max(100 - item.quantity, 0)
+          }));
+          if (restock.length) {
+            const restockDiv = document.createElement('div');
+            restockDiv.className = 'col-12';
+            restockDiv.innerHTML = `<div class="card shadow-sm fade-in"><div class="card-body"><h4 class="card-title">📦 Restock Suggestions</h4><ul>
+              ${restock.map(item => `<li>${item.name}: Add ${item.suggested_quantity} units</li>`).join('')}
+            </ul></div></div>`;
+            insightsRow.appendChild(restockDiv);
+          }
+        })
+        .catch(error => {
+          console.error("Dashboard data load failed:", error);
+        });
+    });
+  </script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('.card').forEach(card => {
+        // Add close button to each card
+        const closeBtn = document.createElement('span');
+        closeBtn.classList.add('close-btn');
+        closeBtn.innerHTML = '&times;';
+        closeBtn.title = 'Close';
+        card.querySelector('.card-body').prepend(closeBtn);
+    
+        closeBtn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          card.classList.remove('expanded');
+        });
+    
+        card.addEventListener('click', function () {
+          if (!this.classList.contains('expanded')) {
+            document.querySelectorAll('.card.expanded').forEach(c => c.classList.remove('expanded'));
+            this.classList.add('expanded');
+          }
+        });
+      });
+    });
+    </script>
+    
+
+  <script src="{% static 'js/insights.js' %}"></script>
+  <script src="{% static 'js/effects.js' %}"></script>
+  <script src="{% static 'js/script.js' %}"></script>
+
+</body>
+</html>
