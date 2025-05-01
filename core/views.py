@@ -300,17 +300,12 @@ def insights_view(request):
             markers=True,
             line_shape='linear'
         )
-        forecast_fig.update_layout(xaxis_title='Date & Time', yaxis_title='Quantity')
-    else:
-        # Create empty DataFrame with expected columns
-        empty_df = pd.DataFrame({'created_at': [], 'quantity': []})
-        forecast_fig = px.line(
-            empty_df,
-            x='created_at',
-            y='quantity',
-            title='Demand Forecast (No Data)',
-            markers=True
+        forecast_fig.update_layout(
+            xaxis_title='Date & Time',
+            yaxis_title='Quantity'
         )
+    else:
+        forecast_fig = px.line(x=[], y=[], title='Demand Forecast (No Data)', markers=True)
         forecast_fig.update_layout(xaxis_title='Date & Time', yaxis_title='Quantity')
 
     # ----- Anomalies Chart -----
